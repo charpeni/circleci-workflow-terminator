@@ -60,11 +60,13 @@ const server = micro(async (req, res) => {
     `Push event received with the following head commit SHA: ${headCommitSha}`
   );
 
+  micro.send(res, 200);
+
   const builds = await waitForCommitOnCircle(repo, headCommitSha);
 
   if (!builds) {
     console.log('The commit has not showed up on CircleCi.');
-    return '';
+    return;
   }
 
   const activeBuilds = builds.filter(({ status }) =>
@@ -73,7 +75,7 @@ const server = micro(async (req, res) => {
 
   if (activeBuilds.length === 0) {
     console.log('Nothing to do here.');
-    return '';
+    return;
   }
 
   const branches = activeBuilds.reduce(
@@ -117,8 +119,6 @@ const server = micro(async (req, res) => {
       });
     }
   });
-
-  return '';
 });
 
 server.listen(process.env.PORT || 3000);
