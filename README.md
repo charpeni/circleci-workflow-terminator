@@ -18,14 +18,16 @@ To achieve that, this bot will be triggered by GitHub push events and will cance
 
 ## Setup
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-1. Generate a [CircleCI Personal API Token](https://circleci.com/docs/2.0/managing-api-tokens/#creating-a-personal-api-token).
-1. Deploy this bot somewhere like on [Heroku](https://www.heroku.com/) or [Now](https://zeit.co/now).
-1. Add `CIRCLE_TOKEN` with your CircleCI Personal API Token to the environment variables.
-1. Add a Webhook to your deployed bot into your GitHub repository with only push events.
+[![Deploy to now](https://deploy.now.sh/static/button.svg)](https://deploy.now.sh/?repo=https://github.com/charpeni/circleci-workflow-terminator&env=CIRCLE_TOKEN)
 
-You're good to go. :tada:
+1.  Generate a [CircleCI Personal API Token](https://circleci.com/docs/2.0/managing-api-tokens/#creating-a-personal-api-token).
+1.  Deploy this bot somewhere like on [Heroku](https://www.heroku.com/) or [Now](https://zeit.co/now).
+1.  Add `CIRCLE_TOKEN` with your CircleCI Personal API Token to the environment variables.
+1.  Add a Webhook to your deployed bot into your GitHub repository with only push events.
+
+You're good to go. 🎉
 
 ## License
 
