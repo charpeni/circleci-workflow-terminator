@@ -1,7 +1,8 @@
 const micro = require('micro');
 const fetch = require('node-fetch');
 
-const MAX_TRY = 2;
+const MAX_RETRIES = process.env.MAX_RETRIES || 2;
+const WAIT_TIME = process.env.WAIT_TIME || 10000;
 const CIRCLE_CI_ACTIVE_STATUS = [
   'running',
   'queued',
@@ -21,10 +22,10 @@ const circleciApiEndpoint = (repo, url = '') => {
   return `https://circleci.com/api/v1.1/project/github/${repo}${url}?circle-token=${CIRCLE_TOKEN}`;
 };
 
-const waitForCommitOnCircle = async (repo, commit, tryCount = 0) => {
+const waitForCommitOnCircle = async (repo, commit, retryCount = 0) => {
   console.log(
     `Waiting for commit (${commit}) to show up on CircleCI.`,
-    tryCount > 0 ? `(Retry ${tryCount})` : ''
+    retryCount > 0 ? `(Retry ${retryCount})` : ''
   );
   const builds = await checkIfCircleHaveCommit(repo, commit);
 
@@ -32,12 +33,12 @@ const waitForCommitOnCircle = async (repo, commit, tryCount = 0) => {
     return builds;
   }
 
-  if (tryCount >= MAX_TRY) {
+  if (retryCount >= MAX_RETRIES) {
     return false;
   }
 
-  await sleep(10000);
-  return await waitForCommitOnCircle(repo, commit, tryCount + 1);
+  await sleep(WAIT_TIME);
+  return await waitForCommitOnCircle(repo, commit, retryCount + 1);
 };
 
 const checkIfCircleHaveCommit = async (repo, commit) => {

@@ -10,6 +10,16 @@
     "CIRCLE_TOKEN": {
       "description": "CircleCI Token",
       "value": ""
+    },
+    "MAX_RETRIES": {
+      "description": "Max retries to verify if the commit is on CircleCI",
+      "value": "",
+      "required": false
+    },
+    "WAIT_TIME": {
+      "description": "Wait time between each retry",
+      "value": "",
+      "required": false
     }
   }
 }
