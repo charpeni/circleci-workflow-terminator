@@ -1,4 +1,4 @@
-const micro = require('micro');
+const { send, json } = require('micro');
 const fetch = require('node-fetch');
 
 const MAX_RETRIES = process.env.MAX_RETRIES || 2;
@@ -52,12 +52,12 @@ const checkIfCircleHaveCommit = async (repo, commit) => {
   return isHavingCommit ? builds : false;
 };
 
-const server = micro(async (req, res) => {
+module.exports = async (req, res) => {
   if (!req.body) {
-    return micro.send(res, 400);
+    return send(res, 400);
   }
 
-  const payload = await micro.json(req);
+  const payload = await json(req);
   const headCommitSha = payload.head_commit.id;
   const repo = payload.repository.full_name;
 
@@ -65,7 +65,7 @@ const server = micro(async (req, res) => {
     `Push event received with the following head commit SHA: ${headCommitSha}`
   );
 
-  micro.send(res, 200);
+  send(res, 200);
 
   const builds = await waitForCommitOnCircle(repo, headCommitSha);
 
@@ -124,6 +124,4 @@ const server = micro(async (req, res) => {
       });
     }
   });
-});
-
-server.listen(process.env.PORT || 3000);
+};
