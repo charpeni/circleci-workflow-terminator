@@ -53,6 +53,10 @@ const checkIfCircleHaveCommit = async (repo, commit) => {
 };
 
 const server = micro(async (req, res) => {
+  if (!req.body) {
+    return micro.send(res, 400);
+  }
+
   const payload = await micro.json(req);
   const headCommitSha = payload.head_commit.id;
   const repo = payload.repository.full_name;
@@ -70,8 +74,8 @@ const server = micro(async (req, res) => {
     return;
   }
 
-  const activeBuilds = builds.filter(({ status }) =>
-    CIRCLE_CI_ACTIVE_STATUS.includes(status)
+  const activeBuilds = builds.filter(
+    ({ status, branch }) => branch && CIRCLE_CI_ACTIVE_STATUS.includes(status)
   );
 
   if (activeBuilds.length === 0) {
