@@ -1,0 +1,46 @@
+aliases:
+  - &restore-yarn-cache
+    keys:
+      - yarn-{{ checksum "yarn.lock" }}
+  - &save-yarn-cache
+    paths:
+      - node_modules
+      - ~/.cache/yarn
+    key: yarn-{{ checksum "yarn.lock" }}
+
+defaults: &defaults
+  working_directory: ~/circleci-workflow-terminator
+  docker:
+    - image: circleci/node:8
+
+version: 2
+jobs:
+  checkout_code:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore-cache: *restore-yarn-cache
+      - run:
+          name: Yarn Install
+          command: |
+            yarn install --no-progress --non-interactive --cache-folder ~/.cache/yarn
+      - save-cache: *save-yarn-cache
+      - persist_to_workspace:
+          root: .
+          paths: .
+
+  test:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/circleci-workflow-terminator
+      - run: yarn test
+
+workflows:
+  version: 2
+  tests:
+    jobs:
+      - checkout_code
+      - test:
+          requires:
+            - checkout_code

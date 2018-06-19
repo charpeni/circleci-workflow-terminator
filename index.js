@@ -1,8 +1,12 @@
 const { send, json } = require('micro');
 const fetch = require('node-fetch');
 
-const MAX_RETRIES = process.env.MAX_RETRIES || 2;
-const WAIT_TIME = process.env.WAIT_TIME || 10000;
+const flatten = array => [].concat.apply([], array);
+
+const MAX_RETRIES = isNaN(process.env.MAX_RETRIES)
+  ? 2
+  : process.env.MAX_RETRIES;
+const WAIT_TIME = isNaN(process.env.WAIT_TIME) ? 10000 : process.env.WAIT_TIME;
 const CIRCLE_CI_ACTIVE_STATUS = [
   'running',
   'queued',
@@ -20,6 +24,18 @@ const circleciApiEndpoint = (repo, url = '') => {
   }
 
   return `https://circleci.com/api/v1.1/project/github/${repo}${url}?circle-token=${CIRCLE_TOKEN}`;
+};
+
+const checkIfCircleHaveCommit = async (repo, commit) => {
+  const res = await fetch(circleciApiEndpoint(repo));
+  const builds = await res.json();
+
+  const isHavingCommit =
+    builds &&
+    builds.length > 0 &&
+    builds.some(({ vcs_revision }) => vcs_revision === commit);
+
+  return isHavingCommit ? builds : false;
 };
 
 const waitForCommitOnCircle = async (repo, commit, retryCount = 0) => {
@@ -41,23 +57,13 @@ const waitForCommitOnCircle = async (repo, commit, retryCount = 0) => {
   return await waitForCommitOnCircle(repo, commit, retryCount + 1);
 };
 
-const checkIfCircleHaveCommit = async (repo, commit) => {
-  const res = await fetch(circleciApiEndpoint(repo));
-  const builds = await res.json();
-
-  const isHavingCommit = builds.some(
-    ({ vcs_revision }) => vcs_revision === commit
-  );
-
-  return isHavingCommit ? builds : false;
-};
-
 module.exports = async (req, res) => {
-  if (!req.body) {
+  const payload = await json(req);
+
+  if (!payload || !payload.head_commit || !payload.repository) {
     return send(res, 400);
   }
 
-  const payload = await json(req);
   const headCommitSha = payload.head_commit.id;
   const repo = payload.repository.full_name;
 
@@ -65,13 +71,16 @@ module.exports = async (req, res) => {
     `Push event received with the following head commit SHA: ${headCommitSha}`
   );
 
-  send(res, 200);
+  // Send 200 early to prevent timeout error from GitHub webhooks.
+  if (req.headers.host.includes('github.com')) {
+    send(res, 200);
+  }
 
   const builds = await waitForCommitOnCircle(repo, headCommitSha);
 
   if (!builds) {
     console.log('The commit has not showed up on CircleCi.');
-    return;
+    return '';
   }
 
   const activeBuilds = builds.filter(
@@ -80,7 +89,7 @@ module.exports = async (req, res) => {
 
   if (activeBuilds.length === 0) {
     console.log('Nothing to do here.');
-    return;
+    return '';
   }
 
   const branches = activeBuilds.reduce(
@@ -110,18 +119,25 @@ module.exports = async (req, res) => {
     {}
   );
 
-  Object.values(branchesAndWorkflows).map(branch => {
-    if (Object.keys(branch).length > 1) {
-      const buildsToCancel = Object.values(branch)
-        .sort((a, b) => new Date(b[0].author_date) - new Date(a[0].author_date))
-        .pop();
+  return flatten(
+    Object.values(branchesAndWorkflows).map(branch => {
+      if (Object.keys(branch).length > 1) {
+        const buildsToCancel = Object.values(branch).sort(
+          (a, b) => new Date(a[0].author_date) - new Date(b[0].author_date)
+        );
 
-      buildsToCancel.map(async ({ build_num }) => {
-        console.log(`Build #${build_num} will be canceled.`);
-        return await fetch(circleciApiEndpoint(repo, `/${build_num}/cancel`), {
-          method: 'POST',
+        buildsToCancel.pop();
+
+        return flatten(buildsToCancel).map(({ build_num }) => {
+          console.log(`Build #${build_num} will be canceled.`);
+          fetch(circleciApiEndpoint(repo, `/${build_num}/cancel`), {
+            method: 'POST',
+          });
+          return build_num;
         });
-      });
-    }
-  });
+      }
+
+      return [];
+    })
+  );
 };
