@@ -60,7 +60,7 @@ const waitForCommitOnCircle = async (repo, commit, retryCount = 0) => {
 module.exports = async (req, res) => {
   const payload = await json(req);
 
-  if (!payload || !payload.head_commit || !payload.repository) {
+  if (!payload || !payload.repository) {
     return send(res, 400);
   }
 
@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
   );
 
   // Send 200 early to prevent timeout error from GitHub webhooks.
-  if (req.headers.host.includes('github.com')) {
+  if (req.headers['user-agent'].includes('GitHub-Hookshot')) {
     send(res, 200);
   }
 
