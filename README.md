@@ -1,4 +1,4 @@
-# CircleCI Workflow Terminator
+# CircleCI Workflow Terminator [![CircleCI](https://circleci.com/gh/charpeni/circleci-workflow-terminator.svg?style=svg)](https://circleci.com/gh/charpeni/circleci-workflow-terminator)
 
 A bot to cancel redundant builds from CircleCi workflows.
 
