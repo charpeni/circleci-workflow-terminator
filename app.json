@@ -1,7 +1,7 @@
 {
-  "name": "Auto-cancel CircleCI redundant builds",
+  "name": "Cancel redundant builds",
   "description":
-    "Used to auto-cancel redundant builds based on GitHub push event",
+    "Used to auto-cancel CircleCI redundant builds based on GitHub push event",
   "repository":
     "https://github.com/charpeni/circleci-workflows-cancel-redundant-builds",
   "keywords": ["node", "github", "circleci"],
